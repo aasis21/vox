@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Uninstall Halo: remove the extension from the Copilot CLI extensions dir.
+    Uninstall Vox: remove the extension from the Copilot CLI extensions dir.
 
 .PARAMETER ExtensionsDir
     Copilot CLI extensions root. Default: ~/.copilot/extensions
@@ -11,9 +11,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$dest = Join-Path $ExtensionsDir 'halo'
+$dest = Join-Path $ExtensionsDir 'vox'
 
-Write-Host "== Halo uninstaller ==" -ForegroundColor Cyan
+Write-Host "== Vox uninstaller ==" -ForegroundColor Cyan
 if (Test-Path $dest) {
     Remove-Item -Recurse -Force $dest
     Write-Host "Removed: $dest"

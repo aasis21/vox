@@ -1,22 +1,22 @@
 <#
 .SYNOPSIS
-  One-line bootstrap installer for Halo (Windows).
+  One-line bootstrap installer for Vox (Windows).
 
 .DESCRIPTION
-  Clones (or updates) the Halo repo into $CheckoutDir, then runs setup.ps1 to
-  copy the extension into ~/.copilot/extensions/halo.
+  Clones (or updates) the Vox repo into $CheckoutDir, then runs setup.ps1 to
+  copy the extension into ~/.copilot/extensions/vox.
 
   Designed to be run with:
-    irm https://raw.githubusercontent.com/aasis21/halo/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/aasis21/vox/main/install.ps1 | iex
 #>
 [CmdletBinding()]
 param(
-    [string]$CheckoutDir = (Join-Path $env:USERPROFILE 'halo'),
+    [string]$CheckoutDir = (Join-Path $env:USERPROFILE 'vox'),
     [string]$Branch = 'main'
 )
 
 $ErrorActionPreference = 'Stop'
-$repo = 'https://github.com/aasis21/halo.git'
+$repo = 'https://github.com/aasis21/vox.git'
 
 function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 function Ok($msg)   { Write-Host "  OK  $msg" -ForegroundColor Green }

@@ -1,4 +1,4 @@
-// Voice facade: one per halo process. Hides the internal turn server, the
+// Voice facade: one per vox process. Hides the internal turn server, the
 // fungible front proxy (4321), and the shared registry behind start/stop/who.
 import { basename } from "node:path";
 import { PUBLIC_PORT } from "./config.mjs";

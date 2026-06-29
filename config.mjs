@@ -1,4 +1,4 @@
-// Shared constants for the Halo voice extension.
+// Shared constants for the Vox voice extension.
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 

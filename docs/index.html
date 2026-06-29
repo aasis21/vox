@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Halo — A voice panel for any Copilot session</title>
-<meta name="description" content="Halo is a Copilot CLI extension: talk to the agent out loud and hear it reply, with a reactive listening orb. Voice in, voice out — on Windows, macOS, and Linux." />
-<meta property="og:title" content="Halo" />
+<title>Vox — A voice panel for any Copilot session</title>
+<meta name="description" content="Vox is a Copilot CLI extension: talk to the agent out loud and hear it reply, with a reactive listening orb. Voice in, voice out — on Windows, macOS, and Linux." />
+<meta property="og:title" content="Vox" />
 <meta property="og:description" content="Hands-free voice panel for any GitHub Copilot session. Voice in, voice out." />
 <meta property="og:type" content="website" />
 <meta name="theme-color" content="#0a0c10" />
@@ -17,7 +17,7 @@
 <script>
   (function () {
     try {
-      var saved = localStorage.getItem('halo-theme');
+      var saved = localStorage.getItem('vox-theme');
       var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
       var theme = saved || (prefersLight ? 'light' : 'dark');
       document.documentElement.setAttribute('data-theme', theme);
@@ -94,12 +94,12 @@ footer p { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var
 <div class="grain" aria-hidden="true"></div>
 
 <header class="nav">
-  <a class="brand" href="#top" aria-label="Halo"><span class="brand-mark">◎</span><span>Halo</span></a>
+  <a class="brand" href="#top" aria-label="Vox"><span class="brand-mark">◎</span><span>Vox</span></a>
   <nav class="nav-links">
     <a href="#what">what</a>
     <a href="#install">install</a>
     <a href="#commands">commands</a>
-    <a href="https://github.com/aasis21/halo" target="_blank" rel="noopener">github ↗</a>
+    <a href="https://github.com/aasis21/vox" target="_blank" rel="noopener">github ↗</a>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
       <svg class="ic-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <svg class="ic-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -115,23 +115,23 @@ footer p { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var
     <span class="line"><em>Talk to</em> your</span>
     <span class="line">Copilot. <span class="accent">Out loud.</span></span>
   </h1>
-  <p class="hero-sub">Halo is a Copilot CLI extension that opens a hands-free voice panel for any session. Speak your turn, watch the orb listen, and hear the agent reply. Voice in, voice out — Windows, macOS, and Linux.</p>
+  <p class="hero-sub">Vox is a Copilot CLI extension that opens a hands-free voice panel for any session. Speak your turn, watch the orb listen, and hear the agent reply. Voice in, voice out — Windows, macOS, and Linux.</p>
   <div class="hero-cta">
     <a class="btn btn-primary" href="#install">Install now</a>
-    <a class="btn btn-ghost" href="https://github.com/aasis21/halo" target="_blank" rel="noopener">View on GitHub</a>
+    <a class="btn btn-ghost" href="https://github.com/aasis21/vox" target="_blank" rel="noopener">View on GitHub</a>
   </div>
   <p class="hero-proof">Pure JS. One slash-command. Sibling to <a href="https://aasis21.github.io/engram/">Engram</a> & <a href="https://github.com/aasis21/anya">Anya</a>.</p>
   <div class="hero-install">
     <div class="hero-install-label">Windows · PowerShell</div>
-    <pre class="hero-install-cmd"><span class="prompt">&gt;</span> irm <span class="highlight">https://raw.githubusercontent.com/aasis21/halo/main/install.ps1</span> | iex</pre>
+    <pre class="hero-install-cmd"><span class="prompt">&gt;</span> irm <span class="highlight">https://raw.githubusercontent.com/aasis21/vox/main/install.ps1</span> | iex</pre>
   </div>
   <div class="hero-install">
     <div class="hero-install-label">macOS / Linux · bash</div>
-    <pre class="hero-install-cmd"><span class="prompt">$</span> curl -fsSL <span class="highlight">https://raw.githubusercontent.com/aasis21/halo/main/install.sh</span> | bash</pre>
+    <pre class="hero-install-cmd"><span class="prompt">$</span> curl -fsSL <span class="highlight">https://raw.githubusercontent.com/aasis21/vox/main/install.sh</span> | bash</pre>
   </div>
   <div class="hero-install">
     <div class="hero-install-label">Then, in any session</div>
-    <pre class="hero-install-cmd"><span class="prompt">&gt;</span> <span class="highlight">/halo</span> <span class="muted">— open localhost:4321 and tap the orb</span></pre>
+    <pre class="hero-install-cmd"><span class="prompt">&gt;</span> <span class="highlight">/vox</span> <span class="muted">— open localhost:4321 and tap the orb</span></pre>
   </div>
 </section>
 
@@ -139,12 +139,12 @@ footer p { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var
   <header class="section-head">
     <span class="kicker">01 · What it does</span>
     <h2>A voice canvas for <em>any</em> session.</h2>
-    <p class="section-lede">Run <code>/halo</code> and a single fixed UI comes up on port <code>4321</code> with a reactive listening orb. Spoken turns route to the active session; replies are read back. Many sessions can be live at once.</p>
+    <p class="section-lede">Run <code>/vox</code> and a single fixed UI comes up on port <code>4321</code> with a reactive listening orb. Spoken turns route to the active session; replies are read back. Many sessions can be live at once.</p>
   </header>
   <ol class="feature-grid">
     <li><span class="feat-num">01</span><h3>Voice in.</h3><p>Talk to the agent out loud — your microphone feeds straight into the active Copilot session.</p></li>
     <li><span class="feat-num">02</span><h3>Voice out.</h3><p>Replies are synthesized and read back, so you can keep your hands and eyes on the work.</p></li>
-    <li><span class="feat-num">03</span><h3>One UI, many sessions.</h3><p><code>/halo-who</code> lists every live session; only the active one hears you. Switch any time.</p></li>
+    <li><span class="feat-num">03</span><h3>One UI, many sessions.</h3><p><code>/vox-who</code> lists every live session; only the active one hears you. Switch any time.</p></li>
     <li><span class="feat-num">04</span><h3>Cross-platform.</h3><p>Pure JavaScript, no build. One-line install on Windows, macOS, and Linux.</p></li>
   </ol>
 </section>
@@ -153,13 +153,13 @@ footer p { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var
   <header class="section-head">
     <span class="kicker">02 · Install</span>
     <h2>One line. <em>That's it.</em></h2>
-    <p class="section-lede">Requires Node.js and git on PATH. The bootstrap clones the repo to <code>~/halo</code> and copies the extension into <code>~/.copilot/extensions/halo</code>, where Copilot CLI auto-discovers it.</p>
+    <p class="section-lede">Requires Node.js and git on PATH. The bootstrap clones the repo to <code>~/vox</code> and copies the extension into <code>~/.copilot/extensions/vox</code>, where Copilot CLI auto-discovers it.</p>
   </header>
   <pre class="code-block"><span class="comment"># Windows (PowerShell)</span>
-irm https://raw.githubusercontent.com/aasis21/halo/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/aasis21/vox/main/install.ps1 | iex
 
 <span class="comment"># macOS / Linux (bash)</span>
-curl -fsSL https://raw.githubusercontent.com/aasis21/halo/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/aasis21/vox/main/install.sh | bash
 
 <span class="comment"># Uninstall</span>
 .\uninstall.ps1      <span class="comment"># Windows</span>
@@ -169,14 +169,14 @@ curl -fsSL https://raw.githubusercontent.com/aasis21/halo/main/install.sh | bash
 <section id="commands">
   <header class="section-head">
     <span class="kicker">03 · Commands</span>
-    <h2>Just type <em>/halo</em>.</h2>
+    <h2>Just type <em>/vox</em>.</h2>
   </header>
   <table class="schema">
     <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td>/halo</td><td>Start voice mode and make this session the active voice target. Opens localhost:4321.</td></tr>
-      <tr><td>/halo-stop</td><td>Stop Halo for this session and release its voice server.</td></tr>
-      <tr><td>/halo-who</td><td>List live Halo sessions and show which one is active.</td></tr>
+      <tr><td>/vox</td><td>Start voice mode and make this session the active voice target. Opens localhost:4321.</td></tr>
+      <tr><td>/vox-stop</td><td>Stop Vox for this session and release its voice server.</td></tr>
+      <tr><td>/vox-who</td><td>List live Vox sessions and show which one is active.</td></tr>
     </tbody>
   </table>
 </section>
@@ -184,7 +184,7 @@ curl -fsSL https://raw.githubusercontent.com/aasis21/halo/main/install.sh | bash
 </main>
 
 <footer>
-  <p>© 2026 · <a href="https://github.com/aasis21/halo" target="_blank" rel="noopener">github.com/aasis21/halo</a> · MIT</p>
+  <p>© 2026 · <a href="https://github.com/aasis21/vox" target="_blank" rel="noopener">github.com/aasis21/vox</a> · MIT</p>
   <p>Made by <a href="https://github.com/aasis21" target="_blank" rel="noopener">@aasis21</a><a href="https://aasis21.github.io/engram/" target="_blank" rel="noopener">Sibling: Engram ↗</a></p>
 </footer>
 
@@ -194,7 +194,7 @@ curl -fsSL https://raw.githubusercontent.com/aasis21/halo/main/install.sh | bash
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('halo-theme', next); } catch (e) {}
+    try { localStorage.setItem('vox-theme', next); } catch (e) {}
   });
 </script>
 

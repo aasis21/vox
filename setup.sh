@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Install the Halo voice extension from a local checkout into Copilot CLI.
-# Copies *.mjs into ~/.copilot/extensions/halo where the CLI auto-discovers it.
+# Install the Vox voice extension from a local checkout into Copilot CLI.
+# Copies *.mjs into ~/.copilot/extensions/vox where the CLI auto-discovers it.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXT_DIR="${COPILOT_EXTENSIONS_DIR:-$HOME/.copilot/extensions}"
-DEST="$EXT_DIR/halo"
+DEST="$EXT_DIR/vox"
 
-echo "== Halo installer =="
+echo "== Vox installer =="
 
 if ! command -v node >/dev/null 2>&1; then
-    echo "WARN: node not found on PATH. Halo needs Node.js; install from https://nodejs.org." >&2
+    echo "WARN: node not found on PATH. Vox needs Node.js; install from https://nodejs.org." >&2
 fi
 
 mkdir -p "$DEST"
@@ -21,6 +21,6 @@ echo "Copied   : *.mjs -> $DEST"
 echo
 echo "== Done =="
 echo "Start a Copilot session and run:"
-echo "    /halo        # start voice mode (open http://localhost:4321)"
-echo "    /halo-stop   # stop for this session"
-echo "    /halo-who    # list live Halo sessions"
+echo "    /vox        # start voice mode (open http://localhost:4321)"
+echo "    /vox-stop   # stop for this session"
+echo "    /vox-who    # list live Vox sessions"

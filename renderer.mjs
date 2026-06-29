@@ -9,7 +9,7 @@ export function renderHtml(instanceId) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Halo · Voice</title>
+<title>Vox · Voice</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
@@ -202,7 +202,7 @@ export function renderHtml(instanceId) {
     85%  { opacity: .7; }
     100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); }
   }
-  /* idle invitation: a clear, gentle breathing pulse + double "tap me" halo */
+  /* idle invitation: a clear, gentle breathing pulse + double "tap me" vox */
   body[data-state="idle"] #orb-wrap::before { animation: ringSoft 3.2s ease-out infinite; }
   body[data-state="idle"] #orb-wrap::after  { animation: ringSoft 3.2s ease-out infinite 1.6s; }
   /* gentle, slowed swirl + softer glow while idle so it feels at rest */
@@ -248,7 +248,7 @@ export function renderHtml(instanceId) {
     <div id="aurora2"></div>
 
     <div id="topbar">
-      <div class="wordmark"><b>Halo</b><span>voice</span></div>
+      <div class="wordmark"><b>Vox</b><span>voice</span></div>
       <div id="sessionWrap"><label for="sessSel">Chat</label><select id="sessSel"><option value="">Loading…</option></select></div>
       <span id="spacer"></span>
       <button id="end" class="ghost" title="End session">&#x2715;</button>

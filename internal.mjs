@@ -17,7 +17,7 @@ export async function startInternal({ session }) {
 
             if (req.method === "GET") {
                 res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-                res.end(renderHtml(session?.id ?? "halo"));
+                res.end(renderHtml(session?.id ?? "vox"));
                 return;
             }
 

@@ -1,6 +1,6 @@
 import { sse } from "./http-util.mjs";
 
-const VOICE_PROMPT = "[Halo voice mode] You are in a real-time spoken conversation. The user is talking to you through a microphone, and your reply is read aloud by text-to-speech. Reply in 1-3 short, natural spoken sentences — no markdown, lists, headings, or code blocks.\n\nUser said: ";
+const VOICE_PROMPT = "[Vox voice mode] You are in a real-time spoken conversation. The user is talking to you through a microphone, and your reply is read aloud by text-to-speech. Reply in 1-3 short, natural spoken sentences — no markdown, lists, headings, or code blocks.\n\nUser said: ";
 
 function textFrom(value) {
     if (typeof value === "string") return value;
