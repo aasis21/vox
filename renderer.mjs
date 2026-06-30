@@ -9,7 +9,7 @@ export function renderHtml(instanceId) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Vox · Voice</title>
+<title>Vox — talk to your agent, hands-free</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
@@ -330,9 +330,10 @@ export function renderHtml(instanceId) {
   .live-sep { align-self: center; color: var(--muted); font: 600 10px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; opacity: .8; padding: 2px 0; }
   .live-sep::before, .live-sep::after { content: "·"; margin: 0 8px; opacity: .6; }
 
-  /* transient toast — confirms which chat you switched to */
+  /* transient toast — confirms which chat you switched to; sits low, just above the
+     bottom hint, so it appears right where your attention is when you switch */
   #toast {
-    position: fixed; left: 50%; top: 60px; transform: translateX(-50%) translateY(-12px);
+    position: fixed; left: 50%; bottom: 52px; transform: translateX(-50%) translateY(12px);
     z-index: 60; max-width: 82vw; padding: 8px 16px; border-radius: 999px;
     background: color-mix(in srgb, var(--accent) 24%, rgba(9,11,17,.92));
     border: 1px solid var(--stroke-strong); color: var(--ink);
@@ -398,7 +399,7 @@ export function renderHtml(instanceId) {
       <button id="interrupt" title="Interrupt (Esc)"><span>&#x23F9;</span> Interrupt</button>
     </div>
 
-    <div class="hint" id="hint">Tap the orb or press <b>Space</b> to talk, pause to send — <b>Esc</b> interrupts. Open the <b>&#x1F4DC;</b> transcript anytime.</div>
+    <div class="hint" id="hint">Tap the orb or press <b>Space</b> to talk &middot; pause to send<br><b>Esc</b> interrupts &middot; <b>&#x1F4DC;</b> opens the transcript</div>
 
     <div id="overlay"><div class="card">
       <div class="glyph">&#x1F399;</div>
@@ -1057,6 +1058,10 @@ export function renderHtml(instanceId) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session: sid }),
     }).then(function () { refreshSessions(); connectListen(); loadHistory(sid); }).catch(function () {});
+    // You switched the chat because you want to say something to it, so open the mic
+    // right away instead of resting at "ready" and making you tap again. (No-op until
+    // the session is live / mic is granted.)
+    startListening();
   });
   setTimeout(clearBoot, 1600);
   autoStart();
