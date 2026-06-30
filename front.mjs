@@ -36,7 +36,35 @@ function pipeTurn(session, body, res) {
     upstream.end(JSON.stringify(body));
 }
 
-export async function ensureFront({ selfId, selfInternalPort, servePage, localTurn }) {
+const SSE_HEADERS = {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+};
+
+// Keep an SSE socket open even when there's no target session yet, so the browser
+// EventSource doesn't reconnect-storm; it reconnects with a session once one exists.
+function idleListen(res) {
+    res.writeHead(200, SSE_HEADERS);
+    res.write(": vox-listen idle\n\n");
+    const ping = setInterval(() => { try { res.write(": ping\n\n"); } catch {} }, 25_000);
+    res.on("close", () => clearInterval(ping));
+}
+
+function pipeListen(session, res) {
+    const upstream = http.request(
+        { hostname: "127.0.0.1", port: session.internalPort, path: "/listen", method: "GET" },
+        (proxyRes) => {
+            res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers);
+            proxyRes.pipe(res);
+        },
+    );
+    upstream.on("error", () => { try { res.end(); } catch {} });
+    res.on("close", () => { try { upstream.destroy(); } catch {} });
+    upstream.end();
+}
+
+export async function ensureFront({ selfId, selfInternalPort, servePage, localTurn, localListen }) {
     if (registry.isFrontAlive()) return { hosting: false };
 
     const server = http.createServer(async (req, res) => {
@@ -50,6 +78,19 @@ export async function ensureFront({ selfId, selfInternalPort, servePage, localTu
 
             if (req.method === "GET" && url.pathname === "/sessions") {
                 sendJson(res, 200, registry.list());
+                return;
+            }
+
+            // SSE channel that speaks assistant replies from typed CLI turns.
+            if (req.method === "GET" && url.pathname === "/listen") {
+                const listed = registry.list();
+                const target = url.searchParams.get("session") || listed.active;
+                if (!target) { idleListen(res); return; }
+                if (target === selfId) { localListen(res); return; }
+                const r = registry.load();
+                const session = r.sessions[target];
+                if (!session) { idleListen(res); return; }
+                pipeListen(session, res);
                 return;
             }
 

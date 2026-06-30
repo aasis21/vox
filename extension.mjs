@@ -49,21 +49,18 @@ const session = await joinSession({
             handler: async () => {
                 const { active, sessions } = voice.who();
                 if (!sessions.length) { session.log?.("🎙️ Vox: no live sessions."); return; }
-                const lines = sessions.map((s) => `${s.id === active ? "→" : " "} ${s.name}`).join("\n");
+                const lines = sessions.map((s) => `${s.id === active ? "→" : " "} ${s.name} — ${s.id.slice(0, 8)}`).join("\n");
                 session.log?.(`🎙️ Vox sessions:\n${lines}`);
             },
         },
     ],
-    hooks: {
-        onSessionEnd: async () => {
-            voice.stop();
-            return { cleanupActions: ["Stopped Vox voice server"] };
-        },
-    },
 });
 
 voice = createVoice(session);
 
+// Cleanup on teardown: the CLI stops extensions with SIGTERM (then SIGKILL) on
+// exit / session replacement, so releasing the voice server here covers session
+// end. (The SDK's onSessionEnd callback hook is rejected by the native runtime.)
 for (const sig of ["SIGINT", "SIGTERM"]) {
     process.on(sig, () => { try { voice.stop(); } catch {} process.exit(0); });
 }

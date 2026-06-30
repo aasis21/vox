@@ -12,7 +12,7 @@ const URL = `http://127.0.0.1:${PUBLIC_PORT}/`;
 
 export function createVoice(session) {
     const id = session?.sessionId || `s-${process.pid}`;
-    const name = `${basename(process.cwd())} (${id.slice(0, 6)})`;
+    const name = basename(process.cwd());
     let internal = null;
     let front = null;
 
@@ -32,6 +32,7 @@ export function createVoice(session) {
                         res.end(renderHtml(id));
                     },
                     localTurn: (text, res) => streamTurn(session, text, res),
+                    localListen: (res) => internal.addListenClient(res),
                 });
             }
             return URL;

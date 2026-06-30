@@ -33,6 +33,7 @@ export function renderHtml(instanceId) {
     overflow: hidden; -webkit-font-smoothing: antialiased;
   }
   body[data-state="idle"]      { --accent:#7f93c9; --accent-2:#9fb2d8; }
+  body[data-state="ready"]     { --accent:#9aa0b6; --accent-2:#5b6b7e; }
   body[data-state="listening"] { --accent:#5ce6a3; --accent-2:#22b685; }
   body[data-state="thinking"]  { --accent:#ffcf6b; --accent-2:#f0a93a; }
   body[data-state="speaking"]  { --accent:#7db5ff; --accent-2:#4f8cff; }
@@ -70,26 +71,28 @@ export function renderHtml(instanceId) {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* top wordmark */
-  #topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 18px 18px; }
-  .wordmark { display: flex; align-items: baseline; gap: 8px; }
-  .wordmark b { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 27px; letter-spacing: .3px; }
-  .wordmark span { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
-  #sessionWrap { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--muted); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
-  #sessionWrap label { white-space: nowrap; }
+  /* top bar: close + brand (left) · session (center) · actions (right) */
+  #topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: grid;
+    grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 16px 16px; }
+  .bar-left { display: flex; align-items: center; gap: 10px; justify-self: start; min-width: 0; }
+  .bar-right { display: flex; align-items: center; gap: 9px; justify-self: end; min-width: 0; }
+  .wordmark { display: inline-flex; align-items: center; gap: 7px; }
+  .wordmark .logo { display: block; filter: drop-shadow(0 2px 7px color-mix(in srgb, var(--accent) 42%, transparent)); }
+  .wordmark b { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 23px; letter-spacing: .3px; }
+  #sessionWrap { justify-self: stretch; min-width: 0; display: flex; justify-content: center; }
   #sessSel {
     -webkit-appearance: none; appearance: none; cursor: pointer; color: var(--ink);
-    max-width: 180px; min-width: 120px; height: 34px; border-radius: 12px; padding: 0 30px 0 11px;
+    width: 100%; max-width: 230px; min-width: 0; height: 34px; border-radius: 12px; padding: 0 32px 0 13px;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
     background: var(--panel); border: 1px solid var(--stroke); backdrop-filter: blur(14px);
-    font: 500 12px/1 var(--sans); outline: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-    background-position: calc(100% - 15px) 14px, calc(100% - 10px) 14px;
-    background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
-    transition: transform .12s ease, background-color .2s ease, border-color .2s ease;
+    font: 500 12px/1 var(--sans); letter-spacing: normal; text-transform: none; outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%238a90a0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-position: calc(100% - 11px) center; background-size: 11px; background-repeat: no-repeat;
+    transition: transform .12s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
   }
   #sessSel:hover { background-color: rgba(40,46,60,.7); border-color: var(--stroke-strong); transform: translateY(-1px); }
-  #sessSel:focus { border-color: var(--stroke-strong); }
-  #spacer { flex: 1; }
+  #sessSel:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent); }
+  #sessSel option { background: #12141c; color: var(--ink); }
   .ghost {
     -webkit-appearance: none; cursor: pointer; color: var(--ink);
     width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 16px;
@@ -99,6 +102,27 @@ export function renderHtml(instanceId) {
   .ghost:hover { background: rgba(40,46,60,.7); border-color: var(--stroke-strong); transform: translateY(-1px); }
   .ghost:active { transform: scale(.95); }
   .ghost.off { opacity: .45; }
+  /* send-now button: only while actively capturing your speech */
+  #send { display: none; color: #fff; border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 28%, transparent); }
+  body[data-state="listening"] #send { display: grid; }
+  /* listen trigger: only when ready (between turns), to start a new capture */
+  #trig { display: none; }
+  body[data-state="ready"] #trig { display: grid; }
+  /* mute + end: only once a session is live */
+  #spk { display: none; }
+  body:not([data-state="idle"]) #spk { display: grid; }
+  /* stop: cancel the current capture (listening) or cut off the reply (thinking/speaking) */
+  #stop { display: none; color: #fff; border-color: color-mix(in srgb, #ff7d7d 55%, transparent); background: color-mix(in srgb, #ff7d7d 26%, transparent); }
+  body[data-state="listening"] #stop, body[data-state="thinking"] #stop, body[data-state="speaking"] #stop { display: grid; }
+  /* listen-state pill: clear color-coded indicator of ready vs active capture */
+  #listenState { display: none; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px;
+    font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+    border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); color: color-mix(in srgb, var(--accent) 85%, #fff);
+    background: color-mix(in srgb, var(--accent) 14%, transparent); transition: all .2s ease; }
+  body:not([data-state="idle"]) #listenState { display: inline-flex; }
+  #listenState .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px 1px var(--accent); }
+  body[data-state="listening"] #listenState .dot { animation: blink 1s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
   /* center column */
   #center { position: relative; z-index: 2; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; padding: 20px; }
@@ -116,8 +140,8 @@ export function renderHtml(instanceId) {
   @keyframes ring { 0%{opacity:.6; transform:scale(.85)} 100%{opacity:0; transform:scale(1.35)} }
 
   #orb {
-    position: relative; width: 78%; aspect-ratio: 1; border-radius: 50%;
-    transform: scale(calc(1 + var(--level) * 0.16));
+    position: relative; z-index: 2; width: 78%; aspect-ratio: 1; border-radius: 50%;
+    transform: scale(calc(1 + var(--level) * 0.18));
     transition: transform .08s linear;
     background:
       radial-gradient(60% 60% at 32% 28%, #ffffff 0%, color-mix(in srgb, var(--accent) 70%, #fff) 22%, var(--accent) 52%, var(--accent-2) 100%);
@@ -181,7 +205,7 @@ export function renderHtml(instanceId) {
     opacity: 0; transform: scale(.7); transition: opacity .35s ease, transform .35s ease;
   }
   /* show the mic prompt only while idle; fade to the live visuals otherwise */
-  body[data-state="idle"] #orb-glyph { opacity: .96; transform: scale(1); animation: glyphBob 3.4s ease-in-out infinite; }
+  body[data-state="idle"] #orb-glyph, body[data-state="ready"] #orb-glyph { opacity: .96; transform: scale(1); animation: glyphBob 3.4s ease-in-out infinite; }
   @keyframes glyphBob { 0%,100%{transform:scale(1) translateY(0)} 50%{transform:scale(1.06) translateY(-2px)} }
 
   /* audio-reactive waveform ring (canvas) layered behind the orb */
@@ -227,7 +251,68 @@ export function renderHtml(instanceId) {
   }
   #caption-inner:empty { display: none; }
   .you { color: color-mix(in srgb, var(--accent) 80%, #ffffff); font-style: italic; }
-  .interim { opacity: .5; }
+  .interim { opacity: .45; }
+
+  /* live mic-level halo behind the orb — confirms we're actually hearing you */
+  #levelGlow {
+    position: absolute; inset: -8%; z-index: 0; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 60%, transparent), transparent 66%);
+    opacity: calc(var(--level) * 0.85);
+    transform: scale(calc(1 + var(--level) * 0.28));
+    transition: opacity .09s linear, transform .09s linear;
+  }
+  /* silence countdown — a thin linear bar under the status, only while the
+     auto-send timer is actually running (i.e. after you've started speaking) */
+  #cdbar {
+    width: 180px; max-width: 60vw; height: 3px; border-radius: 3px; margin-top: -14px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent); overflow: hidden;
+    opacity: 0; transition: opacity .2s ease;
+  }
+  #cdbar.show { opacity: .9; }
+  #cdfill {
+    height: 100%; width: 100%; border-radius: 3px; transform-origin: left center; transform: scaleX(1);
+    background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  /* clear interrupt / barge-in control, shown while the agent works or talks */
+  #interrupt {
+    -webkit-appearance: none; cursor: pointer; display: none; align-items: center; gap: 8px;
+    height: 42px; padding: 0 20px; border-radius: 999px; font: 600 13px/1 var(--sans); letter-spacing: .03em;
+    color: #fff; border: 1px solid color-mix(in srgb, #ff8a8a 58%, transparent);
+    background: color-mix(in srgb, #ff7d7d 24%, transparent); backdrop-filter: blur(12px);
+    box-shadow: 0 8px 28px -10px color-mix(in srgb, #ff7d7d 60%, transparent);
+    transition: transform .12s ease, background .2s ease, border-color .2s ease;
+  }
+  #interrupt span { font-size: 15px; line-height: 1; }
+  #interrupt:hover { background: color-mix(in srgb, #ff7d7d 34%, transparent); border-color: color-mix(in srgb, #ff8a8a 75%, transparent); transform: translateY(-1px); }
+  #interrupt:active { transform: scale(.96); }
+  body[data-state="thinking"] #interrupt, body[data-state="speaking"] #interrupt { display: inline-flex; }
+
+  /* slide-in conversation transcript — sits below the toolbar so the 📜 toggle
+     stays reachable, and has its own ✕ close button */
+  #log {
+    position: fixed; top: 64px; right: 0; bottom: 0; width: min(360px, 86vw); z-index: 4;
+    background: rgba(9, 11, 17, .82); backdrop-filter: blur(18px);
+    border-left: 1px solid var(--stroke); border-top: 1px solid var(--stroke);
+    border-top-left-radius: 16px; display: flex; flex-direction: column;
+    transform: translateX(105%); transition: transform .32s cubic-bezier(.4,0,.2,1);
+  }
+  #log[data-open="true"] { transform: translateX(0); }
+  #logHead {
+    display: flex; align-items: center; gap: 8px;
+    padding: 16px 14px 12px; font: 600 12px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--stroke);
+  }
+  #logHead .title { flex: 1; }
+  #logHead .ghost { width: 32px; height: 32px; font-size: 14px; }
+  #logBody { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  #logBody::-webkit-scrollbar { width: 8px; }
+  #logBody::-webkit-scrollbar-thumb { background: var(--stroke-strong); border-radius: 8px; }
+  .turn { display: flex; flex-direction: column; gap: 4px; }
+  .turn .who { font: 600 10px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .turn .msg { font-size: 14px; line-height: 1.55; word-break: break-word; white-space: pre-wrap; }
+  .turn.u .msg { color: color-mix(in srgb, var(--accent) 82%, #fff); font-family: var(--serif); font-style: italic; font-size: 16.5px; }
+  .turn.a .msg { color: var(--ink); }
+  #logEmpty { color: var(--muted); font-size: 13px; text-align: center; margin: auto 0; }
 
   /* permission overlay */
   #overlay { position: absolute; inset: 0; z-index: 5; display: none; place-items: center; text-align: center; padding: 28px; background: rgba(5,6,10,.7); backdrop-filter: blur(6px); }
@@ -240,34 +325,62 @@ export function renderHtml(instanceId) {
   #end { display: none; }
   body:not([data-state="idle"]) #end { display: grid; }
   .hint { position: relative; z-index: 2; flex: none; font-size: 11px; color: var(--muted); text-align: center; padding: 0 16px 12px; letter-spacing: .2px; }
+  /* boot: on open we briefly check mic permission — stay calm, no "tap me" flash */
+  #status, #hint { transition: opacity .3s ease; }
+  body.boot #status, body.boot #hint, body.boot #orb-glyph, body.boot #trig { opacity: 0 !important; }
+  body.boot #orb-wrap::before, body.boot #orb-wrap::after { animation: none !important; opacity: 0 !important; }
 </style>
 </head>
-<body data-state="idle">
+<body data-state="idle" class="boot">
   <div id="stage">
     <div id="aurora"></div>
     <div id="aurora2"></div>
 
     <div id="topbar">
-      <div class="wordmark"><b>Vox</b><span>voice</span></div>
-      <div id="sessionWrap"><label for="sessSel">Chat</label><select id="sessSel"><option value="">Loading…</option></select></div>
-      <span id="spacer"></span>
-      <button id="end" class="ghost" title="End session">&#x2715;</button>
-      <button id="spk" class="ghost" title="Mute voice">&#x1F50A;</button>
+      <div class="bar-left">
+        <button id="end" class="ghost" title="End session">&#x2715;</button>
+        <span class="wordmark">
+          <svg class="logo" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+            <defs><linearGradient id="voxlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a8b8db"/><stop offset="1" stop-color="#7f93c9"/></linearGradient></defs>
+            <circle cx="12" cy="12" r="9" fill="none" stroke="url(#voxlg)" stroke-width="1.5" opacity=".5"/>
+            <rect x="8.3" y="9" width="1.7" height="6" rx=".85" fill="url(#voxlg)"/>
+            <rect x="11.15" y="6.4" width="1.7" height="11.2" rx=".85" fill="url(#voxlg)"/>
+            <rect x="14" y="9" width="1.7" height="6" rx=".85" fill="url(#voxlg)"/>
+          </svg>
+          <b>vox</b>
+        </span>
+      </div>
+      <div id="sessionWrap"><select id="sessSel"><option value="">Loading…</option></select></div>
+      <div class="bar-right">
+        <span id="listenState"><span class="dot"></span><span id="listenLabel">Ready</span></span>
+        <button id="send" class="ghost" title="Send now">&#x27A4;</button>
+        <button id="stop" class="ghost" title="Stop">&#x23F9;</button>
+        <button id="trig" class="ghost" title="Start listening">&#x1F3A4;</button>
+        <button id="logBtn" class="ghost" title="Transcript">&#x1F4DC;</button>
+        <button id="spk" class="ghost" title="Mute voice">&#x1F50A;</button>
+      </div>
     </div>
 
     <div id="center">
-      <div id="orb-wrap"><canvas id="ring"></canvas><div id="orb"><div id="iris"></div><span id="orb-glyph">&#x1F3A4;</span></div></div>
+      <div id="orb-wrap"><div id="levelGlow"></div><canvas id="ring"></canvas><div id="orb"><div id="iris"></div><span id="orb-glyph">&#x1F3A4;</span></div></div>
       <div id="status">Tap the orb to start</div>
+      <div id="cdbar"><div id="cdfill"></div></div>
       <div id="caption-inner"></div>
+      <button id="interrupt" title="Interrupt (Esc)"><span>&#x23F9;</span> Interrupt</button>
     </div>
 
-    <div class="hint" id="hint">Tap the glowing orb to talk — then just speak any time to interrupt.</div>
+    <div class="hint" id="hint">Tap the orb or press <b>Space</b> to talk, pause to send — <b>Esc</b> interrupts. Open the <b>&#x1F4DC;</b> transcript anytime.</div>
 
     <div id="overlay"><div class="card">
       <div class="glyph">&#x1F399;</div>
       <h2 id="ov-title">Microphone needed</h2>
       <p id="ov-msg">Allow microphone access to start talking.</p>
     </div></div>
+
+    <aside id="log" data-open="false">
+      <div id="logHead"><span class="title">Transcript</span><button id="logClear" class="ghost" title="Clear transcript">&#x1F5D1;</button><button id="logClose" class="ghost" title="Close">&#x2715;</button></div>
+      <div id="logBody"><div id="logEmpty">No turns yet.</div></div>
+    </aside>
 
     <div id="grain"></div>
   </div>
@@ -291,18 +404,47 @@ export function renderHtml(instanceId) {
     end: document.getElementById("end"),
     sessSel: document.getElementById("sessSel"),
     spk: document.getElementById("spk"),
+    trig: document.getElementById("trig"),
+    send: document.getElementById("send"),
+    stop: document.getElementById("stop"),
+    listenLabel: document.getElementById("listenLabel"),
     hint: document.getElementById("hint"),
+    cdbar: document.getElementById("cdbar"),
+    cdfill: document.getElementById("cdfill"),
+    interrupt: document.getElementById("interrupt"),
+    log: document.getElementById("log"),
+    logBody: document.getElementById("logBody"),
+    logEmpty: document.getElementById("logEmpty"),
+    logBtn: document.getElementById("logBtn"),
+    logClear: document.getElementById("logClear"),
+    logClose: document.getElementById("logClose"),
   };
 
   var stream = null, recog = null;
-  var live = false, busy = false, speakMuted = false, state = "idle";
+  var live = false, busy = false, speakMuted = false, capturing = false, state = "idle";
   var audioCtx = null, analyser = null, levelRAF = 0;
+  var pendingFinal = "", silenceTimer = 0;
+  var stopToReady = false;     // set by ⏹ Stop so a cancelled turn rests at "ready"
+  var autoListen = true;       // conversational: return to listening after each reply
+  // Listening is manual to start: you open each turn yourself (orb / mic / Space),
+  // but once a reply finishes we hand the mic back so you needn't click every time.
+  // Once listening, the turn is sent after this much silence — or instantly via ➤.
+  var SILENCE_MS = 4000;
 
-  var LABELS = { idle: "Tap the orb to start", listening: "<b>Listening</b>", thinking: "<b>Thinking</b>…", speaking: "<b>Speaking</b> — tap to interrupt" };
+  var LABELS = {
+    idle: "Tap the orb to start",
+    ready: "Tap the orb to talk",
+    listening: "<b>Listening</b> — tap the orb to send",
+    thinking: "<b>Thinking</b>…",
+    speaking: "<b>Speaking</b> — tap the orb to stop"
+  };
+  var PILL = { ready: "Ready", listening: "Listening", thinking: "Working", speaking: "Speaking" };
   function setState(s, label) {
     state = s; el.body.setAttribute("data-state", s);
     el.status.innerHTML = label || LABELS[s] || "";
-    if (s !== "listening") el.body.style.setProperty("--level", "0");
+    if (el.listenLabel && PILL[s]) el.listenLabel.textContent = PILL[s];
+    if (s === "idle" || s === "thinking" || s === "speaking") el.body.style.setProperty("--level", "0");
+    if (s !== "listening") stopCountdown();
   }
   function showOverlay(title, msg) {
     if (title === null) { el.overlay.classList.remove("show"); return; }
@@ -327,10 +469,13 @@ export function renderHtml(instanceId) {
       }
       for (var i = 0; i < sessions.length; i++) {
         var opt = document.createElement("option");
-        opt.value = sessions[i].id;
-        opt.textContent = sessions[i].name || sessions[i].id;
+        var sid = sessions[i].id || "";
+        var nm = sessions[i].name;
+        var shortId = sid.length > 8 ? sid.slice(0, 8) : sid;
+        opt.value = sid;
+        opt.textContent = (sessions[i].active ? "● " : "") + (nm ? nm + " — " + shortId : sid);
         el.sessSel.appendChild(opt);
-        if (sessions[i].active) active = sessions[i].id;
+        if (sessions[i].active) active = sid;
       }
       el.sessSel.value = active || current || sessions[0].id;
     }).catch(function () {});
@@ -413,7 +558,6 @@ export function renderHtml(instanceId) {
       src.connect(analyser);
       var buf = new Uint8Array(analyser.frequencyBinCount);
       var freq = new Uint8Array(analyser.frequencyBinCount);
-      var bargeFrames = 0;
       var loop = function () {
         if (!analyser) return;
         analyser.getByteTimeDomainData(buf);
@@ -421,14 +565,11 @@ export function renderHtml(instanceId) {
         var sum = 0;
         for (var i = 0; i < buf.length; i++) { var v = (buf[i] - 128) / 128; sum += v * v; }
         var rms = Math.sqrt(sum / buf.length);
-        el.body.style.setProperty("--level", state === "listening" ? Math.min(1, rms * 3.2).toFixed(3) : "0");
+        // Orb reacts to live mic loudness whenever the mic is open (ready + listening),
+        // so you can see it is actually hearing you before you commit to a turn.
+        var lvl = (state === "listening" || state === "ready") ? Math.min(1, rms * 3.2) : 0;
+        el.body.style.setProperty("--level", lvl.toFixed(3));
         drawRing(freq);
-        // Barge-in: if the user starts talking while the agent is speaking, cut
-        // the reply short and hand the floor back. echoCancellation keeps its own
-        // TTS from tripping this; we require sustained energy to avoid blips.
-        if (state === "speaking" && !speakMuted && rms > 0.07) {
-          if (++bargeFrames >= 8) { bargeFrames = 0; bargeCancel(); }
-        } else { bargeFrames = 0; }
         levelRAF = requestAnimationFrame(loop);
       };
       loop();
@@ -442,7 +583,58 @@ export function renderHtml(instanceId) {
     el.body.style.setProperty("--level", "0");
   }
 
-  // ---- speech recognition ----
+  // ---- transcript handler (Web Speech) ----
+  // Only runs while listening; accumulates committed words and (re)arms the silence timer.
+  function handleTranscript(finalText, interim) {
+    if (state !== "listening") return;
+    finalText = finalText || ""; interim = interim || "";
+    if (finalText.trim()) pendingFinal += " " + finalText.trim();
+    // Committed words render solid; the live (interim) tail renders dimmed, updating in real time.
+    var solid = escapeHtml(pendingFinal.trim());
+    var tail = escapeHtml(interim.trim());
+    var html = "";
+    if (solid) html += '<span class="you">' + solid + "</span>";
+    if (tail) html += (solid ? " " : "") + '<span class="you interim">' + tail + "</span>";
+    caption(html || '<span class="you interim">listening…</span>');
+    armSilence();
+  }
+
+  // ---- silence auto-send timer + linear countdown bar ----
+  // The bar only appears once the timer is actually running — i.e. after you've
+  // started speaking — so an open mic with no speech shows no distracting countdown.
+  function armSilence() {
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(sendCaptured, SILENCE_MS);
+    startCountdown();
+  }
+  // Deplete the bar from full to empty over the silence window; restart on each new word.
+  function startCountdown() {
+    var bar = el.cdbar, fill = el.cdfill; if (!bar || !fill) return;
+    bar.classList.add("show");
+    fill.style.transition = "none";
+    fill.style.transform = "scaleX(1)";
+    void fill.getBoundingClientRect();
+    fill.style.transition = "transform " + SILENCE_MS + "ms linear";
+    fill.style.transform = "scaleX(0)";
+  }
+  function stopCountdown() {
+    var bar = el.cdbar, fill = el.cdfill; if (!bar || !fill) return;
+    bar.classList.remove("show");
+    fill.style.transition = "none";
+    fill.style.transform = "scaleX(1)";
+  }
+
+  // Send whatever has been captured so far (silence timeout or the ➤ button).
+  // An empty capture simply returns to the ready state.
+  function sendCaptured() {
+    if (state !== "listening") return;
+    clearTimeout(silenceTimer);
+    var text = pendingFinal.trim(); pendingFinal = "";
+    stopCapture();
+    if (text) sendTurn(text); else goReady();
+  }
+
+  // ---- speech recognition (Web Speech) ----
   function buildRecognition() {
     if (!SR) return null;
     var r = new SR(); r.continuous = true; r.interimResults = true; r.lang = navigator.language || "en-US";
@@ -452,19 +644,44 @@ export function renderHtml(instanceId) {
         var res = ev.results[i];
         if (res.isFinal) finalText += res[0].transcript; else interim += res[0].transcript;
       }
-      if (interim) caption('<span class="you interim">' + escapeHtml(interim) + "</span>");
-      if (finalText.trim()) sendTurn(finalText.trim());
+      handleTranscript(finalText, interim);
     };
     r.onerror = function (ev) {
+      caption('<span class="you interim">⚠ ' + escapeHtml(ev.error || "error") + '</span>');
       if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
         showOverlay("Microphone blocked", "Allow microphone access in your browser to talk."); stopLive();
       }
     };
-    r.onend = function () { if (live && !busy) { try { r.start(); } catch (e) {} } };
+    r.onstart = function () { if (state === "listening") caption('<span class="you interim">listening…</span>'); };
+    r.onend = function () { if (live && capturing) { try { r.start(); } catch (e) {} } };
     return r;
   }
-  function pauseRecog() { if (recog) { try { recog.stop(); } catch (e) {} } }
-  function resumeRecog() { if (live && recog && !busy) { try { recog.start(); } catch (e) {} } }
+  function startCapture() {
+    if (!recog) recog = buildRecognition();
+    if (!recog) return false;
+    capturing = true;
+    try { recog.start(); }
+    catch (e) { setTimeout(function () { if (capturing) { try { recog.start(); } catch (e2) {} } }, 250); }
+    return true;
+  }
+  function stopCapture() { capturing = false; stopCountdown(); if (recog) { try { recog.stop(); } catch (e) {} } }
+
+  // Resting state between turns: the mic stays open for the orb visuals, but nothing
+  // is captured or sent until you start the next turn yourself.
+  function goReady() {
+    busy = false; stopCapture();
+    clearTimeout(silenceTimer); pendingFinal = "";
+    if (live) { setState("ready"); caption(""); } else setState("idle");
+  }
+  // Begin a manual listening turn (orb tap, mic button, Space, or auto after a reply).
+  // We do NOT arm the silence timer yet — the countdown starts on your first word,
+  // so you have all the time you need to begin speaking.
+  function startListening() {
+    if (!live || busy || state === "listening" || state === "thinking" || state === "speaking") return;
+    pendingFinal = ""; caption("");
+    if (!startCapture()) { setState("ready", "Speech recognition unavailable in this browser"); return; }
+    setState("listening");
+  }
 
   // ---- TTS queue (ordered, with barge-in) ----
   // Sentences are enqueued as they stream in and spoken back-to-back, so the agent
@@ -525,13 +742,14 @@ export function renderHtml(instanceId) {
 
   // barge-in / interrupt: stop talking AND cut the in-flight turn short
   var activeCtrl = null;
-  function bargeCancel() { if (activeCtrl) { try { activeCtrl.abort(); } catch (e) {} } stopSpeaking(); }
+  function bargeCancel() { if (activeCtrl) { try { activeCtrl.abort(); } catch (e) {} } stopSpeaking(); stopListenSpeech(); pendingFinal = ""; clearTimeout(silenceTimer); stopCountdown(); }
 
   // ---- turn round-trip (streaming) ----
   async function sendTurn(text) {
     if (busy) return;
-    busy = true; pauseRecog(); setState("thinking");
+    busy = true; setState("thinking");
     caption('<span class="you">' + escapeHtml(text) + "</span>");
+    logAdd("user", text);
 
     var ctrl = new AbortController(); activeCtrl = ctrl;
     var to = setTimeout(function () { ctrl.abort(); }, 65000);
@@ -579,25 +797,40 @@ export function renderHtml(instanceId) {
       }
     } finally {
       clearTimeout(to); activeCtrl = null;
-      // Always release the lock and hand the mic back, even if anything above threw.
+      if (full && full.trim()) logAdd("assistant", full);
       busy = false;
-      if (live) { setState("listening"); resumeRecog(); } else setState("idle");
+      goReady();
+      // Hand the mic back automatically so you don't click to talk every turn.
+      // ⏹ Stop sets stopToReady to keep the mic off and rest at "ready" instead.
+      if (live && autoListen && !stopToReady) {
+        setTimeout(function () { if (live && !busy && state === "ready") startListening(); }, 320);
+      }
+      stopToReady = false;
     }
   }
 
   // ---- lifecycle ----
   async function startLive() {
-    try { await startMic(); }
+    if (live) return;
+    live = true; setState("ready", "Starting…");
+    try { await startMic(); }              // open mic for the orb + permission prompt
     catch (e) {
+      live = false; setState("idle");
       showOverlay("Microphone blocked",
-        "Couldn't access the microphone (" + (e && e.name || "error") + "). You can still type below.");
+        "Couldn't access the microphone (" + (e && e.name || "error") + "). Allow access, then tap the orb again.");
+      return;
     }
-    live = true;
-    if (SR) { recog = buildRecognition(); try { recog.start(); } catch (e) {} setState("listening"); }
-    else { setState("idle", "Voice not supported"); el.hint.textContent = "Speech recognition isn't supported in this browser."; }
+    if (!SR) {
+      live = false; stopMic();
+      setState("idle", "Voice not supported");
+      el.hint.textContent = "Speech recognition isn't available here — open Vox in Chrome or Edge.";
+      return;
+    }
+    recog = buildRecognition();
+    setState("ready");
   }
   function stopLive() {
-    live = false; busy = false;
+    live = false; busy = false; capturing = false;
     if (recog) { try { recog.onend = null; recog.stop(); } catch (e) {} recog = null; }
     bargeCancel();
     stopMic(); setState("idle"); caption("");
@@ -609,26 +842,155 @@ export function renderHtml(instanceId) {
     });
   }
 
+  // ---- conversation transcript log ----
+  function logAdd(role, text) {
+    text = (text || "").trim(); if (!text || !el.logBody) return;
+    var t = document.createElement("div");
+    t.className = "turn " + (role === "user" ? "u" : "a");
+    var w = document.createElement("div"); w.className = "who";
+    w.textContent = role === "user" ? "You" : "Vox";
+    var m = document.createElement("div"); m.className = "msg"; m.textContent = text;
+    t.appendChild(w); t.appendChild(m);
+    el.logBody.appendChild(t);
+    el.logBody.scrollTop = el.logBody.scrollHeight;
+    if (el.logEmpty) el.logEmpty.style.display = "none";
+  }
+
+  // ---- listen channel: speak assistant replies that come from TYPED CLI turns ----
+  // The server pushes {delta}/{done} frames on /listen for any reply NOT initiated
+  // by a vox turn, so things you type straight into Copilot are still read aloud.
+  var listenES = null, listenSent = "", listenFull = "", listenActive = false, lastListenSession = null;
+  function cleanForSpeech(s) {
+    return String(s)
+      .replace(/[*_#>\u0060]/g, "")
+      .replace(/\\[([^\\]]+)\\]\\([^)]+\\)/g, "$1")
+      .replace(/\\s+/g, " ")
+      .trim();
+  }
+  function stopListenSpeech() { listenSent = ""; listenFull = ""; listenActive = false; }
+  function flushListen() {
+    var idx, guard = 0;
+    while ((idx = findSentenceEnd(listenSent)) > -1 && guard++ < 60) {
+      var s = listenSent.slice(0, idx + 1).trim();
+      if (s) { var c = cleanForSpeech(s); if (c) enqueueSpeak(c); }
+      listenSent = listenSent.slice(idx + 1).replace(/^\\s+/, "");
+    }
+  }
+  function onListenMsg(msg) {
+    if (busy) return;                 // a vox turn owns the UI/audio (server also suppresses)
+    if (state === "listening") return; // don't trample a turn you're in the middle of speaking
+    if (msg.delta) {
+      if (!listenActive) { listenActive = true; listenSent = ""; listenFull = ""; setState("speaking"); caption(""); }
+      listenFull += msg.delta; listenSent += msg.delta;
+      caption("<span>" + escapeHtml(listenFull) + "</span>");
+      flushListen();
+    }
+    if (msg.done) {
+      if (listenSent && listenSent.trim()) { var t = cleanForSpeech(listenSent.trim()); if (t) enqueueSpeak(t); listenSent = ""; }
+      if (listenActive) {
+        if (listenFull.trim()) logAdd("assistant", listenFull.trim());
+        listenFull = ""; listenActive = false;
+        waitForSpeech().then(function () { if (!busy && state === "speaking") goReady(); });
+      }
+    }
+  }
+  function connectListen() {
+    if (typeof EventSource === "undefined") return;
+    try { if (listenES) listenES.close(); } catch (e) {}
+    var sid = el.sessSel.value || "";
+    lastListenSession = sid;
+    try {
+      listenES = new EventSource("/listen?session=" + encodeURIComponent(sid));
+      listenES.onmessage = function (e) {
+        var msg; try { msg = JSON.parse(e.data); } catch (_) { return; }
+        onListenMsg(msg);
+      };
+    } catch (e) {}
+  }
+
+  // If mic permission is already granted, open straight into listening on load —
+  // no need to click the mic to start the first turn.
+  function clearBoot() { el.body.classList.remove("boot"); }
+  async function autoStart() {
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        var st = await navigator.permissions.query({ name: "microphone" });
+        if (st && st.state === "granted") { await startLive(); if (live) startListening(); }
+      }
+    } catch (e) {}
+    finally { clearBoot(); }
+  }
+
   // The whole orb area is the single control: tap to start when idle, tap to
   // interrupt while the agent is speaking.
   function orbTap() {
     if (!live && state === "idle") { startLive(); return; }
-    if (state === "speaking") { bargeCancel(); return; }
+    if (state === "ready") { startListening(); return; }
+    if (state === "listening") { sendCaptured(); return; }
+    if (state === "thinking" || state === "speaking") { bargeCancel(); return; }
   }
   el.orbWrap.addEventListener("click", orbTap);
   el.end.addEventListener("click", stopLive);
+  // Send now: skip the silence wait and send what's captured so far.
+  el.send.addEventListener("click", function () { sendCaptured(); });
+  // Stop: cancel the current capture (listening) or cut off the reply and rest at
+  // "ready" (thinking/speaking) — the deliberate off-switch, so it won't auto-listen.
+  el.stop.addEventListener("click", function () {
+    if (state === "listening") { stopCapture(); goReady(); return; }
+    stopToReady = true; bargeCancel();
+  });
+  // Start listening manually — no wake word, you choose when to talk.
+  el.trig.addEventListener("click", function () {
+    if (!live) { startLive(); return; }
+    startListening();
+  });
   el.sessSel.addEventListener("change", function () {
     fetch("/select", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session: el.sessSel.value }),
-    }).then(function () { refreshSessions(); }).catch(function () {});
+    }).then(function () { refreshSessions(); connectListen(); }).catch(function () {});
   });
-  refreshSessions();
-  setInterval(refreshSessions, 5000);
+  setTimeout(clearBoot, 1600);
+  autoStart();
+  refreshSessions().then(function () { connectListen(); });
+  setInterval(function () {
+    refreshSessions().then(function () {
+      if ((el.sessSel.value || "") !== lastListenSession) connectListen();
+    });
+  }, 5000);
   el.spk.addEventListener("click", function () {
     speakMuted = !speakMuted; el.spk.classList.toggle("off", speakMuted);
     el.spk.innerHTML = speakMuted ? "&#x1F507;" : "&#x1F50A;";
     if (speakMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+  });
+
+  // Clear interrupt / barge-in: stop the reply and cut the in-flight turn.
+  el.interrupt.addEventListener("click", function () { bargeCancel(); });
+  // Transcript panel: toggle open/closed and clear.
+  el.logBtn.addEventListener("click", function () {
+    var open = el.log.getAttribute("data-open") === "true";
+    el.log.setAttribute("data-open", open ? "false" : "true");
+  });
+  el.logClear.addEventListener("click", function () {
+    el.logBody.innerHTML = "";
+    if (el.logEmpty) { el.logBody.appendChild(el.logEmpty); el.logEmpty.style.display = ""; }
+  });
+  el.logClose.addEventListener("click", function () { el.log.setAttribute("data-open", "false"); });
+
+  // ---- keyboard shortcuts: Space = talk / send, Esc = interrupt / stop ----
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA") return;
+    if (e.code === "Space" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      if (!live && state === "idle") { startLive(); return; }
+      if (state === "ready") { startListening(); return; }
+      if (state === "listening") { sendCaptured(); return; }
+      if (state === "thinking" || state === "speaking") { bargeCancel(); return; }
+    } else if (e.key === "Escape" || e.key === "Esc") {
+      if (state === "listening") { stopCapture(); goReady(); return; }
+      if (state === "thinking" || state === "speaking") { bargeCancel(); return; }
+    }
   });
 
   if (!SR) el.hint.textContent = "Speech recognition isn't supported in this browser.";
