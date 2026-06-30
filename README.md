@@ -66,7 +66,10 @@ read back to you. Voice in, voice out — no editor, no tab-juggling, just talk.
 
 ## Quick start
 
-Requires **Node.js** and **git** on PATH. Run from any shell:
+Requires the standalone **GitHub Copilot CLI** — the
+[`copilot`](https://www.npmjs.com/package/@github/copilot) command
+(`npm install -g @github/copilot`), **not** the deprecated `gh copilot` extension — plus
+**Node.js** and **git** on PATH. Run from any shell:
 
 **Windows (PowerShell):**
 
@@ -138,4 +141,4 @@ identity and remembers the mic permission. Override the browser with
 
 ## License
 
-MIT
+Licensed under the [MIT License](LICENSE).
