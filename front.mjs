@@ -2,6 +2,7 @@ import http from "node:http";
 import { PUBLIC_PORT } from "./config.mjs";
 import { listen, readBody } from "./http-util.mjs";
 import * as registry from "./registry.mjs";
+import { readHistory } from "./store.mjs";
 
 function sendJson(res, status, obj) {
     res.writeHead(status, { "Content-Type": "application/json" });
@@ -78,6 +79,15 @@ export async function ensureFront({ selfId, selfInternalPort, servePage, localTu
 
             if (req.method === "GET" && url.pathname === "/sessions") {
                 sendJson(res, 200, registry.list());
+                return;
+            }
+
+            // Full prior conversation for a session, read from the CLI's own store,
+            // so the transcript shows everything that happened before Vox attached.
+            if (req.method === "GET" && url.pathname === "/history") {
+                const sid = url.searchParams.get("session") || registry.list().active || "";
+                const turns = await readHistory(sid);
+                sendJson(res, 200, { session: sid, turns });
                 return;
             }
 

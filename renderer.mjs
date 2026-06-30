@@ -325,6 +325,22 @@ export function renderHtml(instanceId) {
   .turn.u .msg { color: color-mix(in srgb, var(--accent) 82%, #fff); font-family: var(--serif); font-style: italic; font-size: 16.5px; }
   .turn.a .msg { color: var(--ink); }
   #logEmpty { color: var(--muted); font-size: 13px; text-align: center; margin: auto 0; }
+  /* prior conversation pulled from the CLI store reads dimmer than live turns */
+  .turn.hist { opacity: .62; }
+  .live-sep { align-self: center; color: var(--muted); font: 600 10px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; opacity: .8; padding: 2px 0; }
+  .live-sep::before, .live-sep::after { content: "·"; margin: 0 8px; opacity: .6; }
+
+  /* transient toast — confirms which chat you switched to */
+  #toast {
+    position: fixed; left: 50%; top: 60px; transform: translateX(-50%) translateY(-12px);
+    z-index: 60; max-width: 82vw; padding: 8px 16px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 24%, rgba(9,11,17,.92));
+    border: 1px solid var(--stroke-strong); color: var(--ink);
+    font: 600 13px/1.2 var(--sans); letter-spacing: .2px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; box-shadow: 0 12px 32px rgba(0,0,0,.45);
+    opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* permission overlay */
   #overlay { position: absolute; inset: 0; z-index: 5; display: none; place-items: center; text-align: center; padding: 28px; background: rgba(5,6,10,.7); backdrop-filter: blur(6px); }
@@ -347,6 +363,7 @@ export function renderHtml(instanceId) {
   <div id="stage">
     <div id="aurora"></div>
     <div id="aurora2"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
 
     <div id="topbar">
       <div class="bar-left">
@@ -430,6 +447,7 @@ export function renderHtml(instanceId) {
     logBtn: document.getElementById("logBtn"),
     logClear: document.getElementById("logClear"),
     logClose: document.getElementById("logClose"),
+    toast: document.getElementById("toast"),
   };
 
   var stream = null, recog = null;
@@ -489,10 +507,14 @@ export function renderHtml(instanceId) {
         opt.value = sid;
         opt.textContent = (sessions[i].active ? "● " : "") + titleText + (shortId ? " — " + shortId : "");
         opt.title = (nm ? nm : "") + (summary ? " · " + summary : "") + (sid ? " · " + sid : "");
+        opt.dataset.title = titleText;
         el.sessSel.appendChild(opt);
         if (sessions[i].active) active = sid;
       }
-      el.sessSel.value = active || current || sessions[0].id;
+      // Per-panel target: keep THIS panel's own selection; only fall back to the
+      // registry's active session (or first) when nothing is chosen yet. This stops
+      // the periodic refresh from yanking one panel to whatever another panel picked.
+      el.sessSel.value = current || active || sessions[0].id;
     }).catch(function () {});
   }
 
@@ -858,10 +880,10 @@ export function renderHtml(instanceId) {
   }
 
   // ---- conversation transcript log ----
-  function logAdd(role, text) {
+  function logAdd(role, text, hist) {
     text = (text || "").trim(); if (!text || !el.logBody) return;
     var t = document.createElement("div");
-    t.className = "turn " + (role === "user" ? "u" : "a");
+    t.className = "turn " + (role === "user" ? "u" : "a") + (hist ? " hist" : "");
     var w = document.createElement("div"); w.className = "who";
     w.textContent = role === "user" ? "You" : "Vox";
     var m = document.createElement("div"); m.className = "msg"; m.textContent = text;
@@ -869,6 +891,42 @@ export function renderHtml(instanceId) {
     el.logBody.appendChild(t);
     el.logBody.scrollTop = el.logBody.scrollHeight;
     if (el.logEmpty) el.logEmpty.style.display = "none";
+  }
+
+  // Brief centered confirmation (e.g. when you switch which chat you're talking to).
+  var toastTimer = null;
+  function toast(msg) {
+    if (!el.toast || !msg) return;
+    el.toast.textContent = msg;
+    el.toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.toast.classList.remove("show"); }, 2400);
+  }
+
+  // Backfill the transcript with the selected session's full prior conversation
+  // (read from the CLI's own store), then mark where the live turns begin. Called
+  // on first load and whenever you switch chats — never on the periodic poll, so
+  // live turns aren't wiped.
+  function loadHistory(sid) {
+    if (!el.logBody) return;
+    sid = sid || "";
+    fetch("/history?session=" + encodeURIComponent(sid)).then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (data) {
+      el.logBody.innerHTML = "";
+      var turns = (data && data.turns) || [];
+      for (var i = 0; i < turns.length; i++) logAdd(turns[i].role, turns[i].text, true);
+      if (turns.length) {
+        var sep = document.createElement("div");
+        sep.className = "live-sep"; sep.textContent = "live";
+        el.logBody.appendChild(sep);
+      }
+      if (el.logEmpty) {
+        if (turns.length) { el.logEmpty.style.display = "none"; }
+        else { el.logBody.appendChild(el.logEmpty); el.logEmpty.style.display = ""; }
+      }
+      el.logBody.scrollTop = el.logBody.scrollHeight;
+    }).catch(function () {});
   }
 
   // ---- listen channel: speak assistant replies that come from TYPED CLI turns ----
@@ -960,14 +1018,22 @@ export function renderHtml(instanceId) {
     startListening();
   });
   el.sessSel.addEventListener("change", function () {
+    var sid = el.sessSel.value;
+    var opt = el.sessSel.options[el.sessSel.selectedIndex];
+    var label = (opt && (opt.dataset.title || opt.textContent)) || sid;
+    // Clean handoff: cut off any in-flight reply from the previous chat, settle the
+    // orb, confirm the switch, and reload the transcript for the chat you picked.
+    bargeCancel();
+    goReady();
+    toast("Now talking to " + label);
     fetch("/select", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: el.sessSel.value }),
-    }).then(function () { refreshSessions(); connectListen(); }).catch(function () {});
+      body: JSON.stringify({ session: sid }),
+    }).then(function () { refreshSessions(); connectListen(); loadHistory(sid); }).catch(function () {});
   });
   setTimeout(clearBoot, 1600);
   autoStart();
-  refreshSessions().then(function () { connectListen(); });
+  refreshSessions().then(function () { connectListen(); loadHistory(el.sessSel.value); });
   setInterval(function () {
     refreshSessions().then(function () {
       if ((el.sessSel.value || "") !== lastListenSession) connectListen();
