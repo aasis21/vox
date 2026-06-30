@@ -29,7 +29,14 @@ const session = await joinSession({
                 try {
                     const url = await voice.start();
                     voice.activate();
-                    session.log?.(`🎙️ Vox: ${voice.name} is now active — open ${url} and tap the orb.`);
+                    const opened = voice.openApp();
+                    if (opened.reused) {
+                        session.log?.(`🎙️ Vox: ${voice.name} is now active — reusing the open Vox app window.`);
+                    } else if (opened.ok) {
+                        session.log?.(`🎙️ Vox: ${voice.name} is now active — opened a ${opened.browser} app window. Tap the orb to talk.`);
+                    } else {
+                        session.log?.(`🎙️ Vox: ${voice.name} is now active — no Chrome/Edge found for app mode, so open ${url} in your browser.`);
+                    }
                 } catch (err) {
                     session.log?.(`vox: ${err?.message || err}`);
                 }

@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { DIR, REGISTRY } from "./config.mjs";
 
 function emptyRegistry() {
-    return { active: null, front: null, sessions: {} };
+    return { active: null, front: null, app: null, sessions: {} };
 }
 
 function normalize(r) {
@@ -11,6 +11,7 @@ function normalize(r) {
     return {
         active: typeof r.active === "string" ? r.active : null,
         front: r.front && Number.isInteger(r.front.pid) ? { pid: r.front.pid } : null,
+        app: r.app && Number.isInteger(r.app.pid) ? { pid: r.app.pid } : null,
         sessions: r.sessions && typeof r.sessions === "object" ? r.sessions : {},
     };
 }
@@ -45,6 +46,7 @@ export function prune(r) {
     }
     if (r.active && !r.sessions[r.active]) r.active = null;
     if (r.front && !pidAlive(r.front.pid)) r.front = null;
+    if (r.app && !pidAlive(r.app.pid)) r.app = null;
     return r;
 }
 
@@ -84,6 +86,20 @@ export function setFront(pid) {
     const r = prune(load());
     r.front = { pid };
     save(r);
+}
+
+// The Vox app window (a detached Chromium app-mode process) is shared across all
+// sessions, since it points at the single front on 4321. Track its pid so a
+// second /vox doesn't spawn a duplicate window.
+export function setApp(pid) {
+    const r = prune(load());
+    r.app = Number.isInteger(pid) ? { pid } : null;
+    save(r);
+}
+
+export function isAppAlive() {
+    const r = prune(load());
+    return !!r.app;
 }
 
 export function list() {

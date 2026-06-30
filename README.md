@@ -50,7 +50,7 @@ Then start a Copilot session and run `/vox`.
 
 | Command | What it does |
 |---------|--------------|
-| `/vox` | Start Vox voice mode and make this session the active voice target. Opens `http://localhost:4321` — tap the orb. |
+| `/vox` | Start Vox voice mode and make this session the active voice target. Opens the UI as its own desktop-style window via Chrome/Edge app mode (falls back to `http://localhost:4321`). Tap the orb. |
 | `/vox-stop` | Stop Vox for this session and release its voice server. |
 | `/vox-who` | List live Vox sessions and show which one is active. |
 
@@ -84,6 +84,13 @@ plays synthesized replies out, routing spoken turns to the active session. A
 persistent `/listen` channel also streams replies from **typed** CLI turns to the
 panel so they're spoken too. Many sessions can be live at once; `/vox-who` shows
 which one is active.
+
+`/vox` opens the panel as a standalone, chrome-less window using an installed
+Chromium browser in app mode (Chrome preferred, then Edge) — this keeps the
+browser's Web Speech APIs working, which Electron and native webviews don't. The
+window uses a dedicated profile (`~/.copilot/vox-app-profile`) so it has its own
+identity and remembers the mic permission. Override the browser with
+`VOX_BROWSER=chrome|edge|brave|chromium` or a full path to an executable.
 
 ## License
 

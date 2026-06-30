@@ -8,6 +8,7 @@ import { startInternal, closeInternal } from "./internal.mjs";
 import { ensureFront, closeFront } from "./front.mjs";
 import * as registry from "./registry.mjs";
 import { readSummary } from "./store.mjs";
+import { launchApp } from "./browser.mjs";
 
 const URL = `http://127.0.0.1:${PUBLIC_PORT}/`;
 
@@ -60,6 +61,15 @@ export function createVoice(session) {
                 });
             }
             return URL;
+        },
+        // Open the UI as its own standalone app window (Chrome/Edge app mode),
+        // reusing the existing window if one is already open. Returns a small
+        // status object the command handler turns into a log line.
+        openApp() {
+            if (registry.isAppAlive()) return { ok: true, reused: true };
+            const r = launchApp(URL);
+            if (r.ok && Number.isInteger(r.pid)) registry.setApp(r.pid);
+            return r;
         },
         stop() {
             if (summaryTimer) { clearInterval(summaryTimer); summaryTimer = null; }
