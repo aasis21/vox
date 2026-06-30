@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { DIR, REGISTRY } from "./config.mjs";
 
 function emptyRegistry() {
-    return { active: null, front: null, app: null, sessions: {} };
+    return { active: null, front: null, app: null, focus: null, sessions: {} };
 }
 
 function normalize(r) {
@@ -12,6 +12,10 @@ function normalize(r) {
         active: typeof r.active === "string" ? r.active : null,
         front: r.front && Number.isInteger(r.front.pid) ? { pid: r.front.pid } : null,
         app: r.app && Number.isInteger(r.app.pid) ? { pid: r.app.pid } : null,
+        focus:
+            r.focus && typeof r.focus.session === "string" && Number.isInteger(r.focus.seq)
+                ? { session: r.focus.session, seq: r.focus.seq }
+                : null,
         sessions: r.sessions && typeof r.sessions === "object" ? r.sessions : {},
     };
 }
@@ -47,6 +51,7 @@ export function prune(r) {
     if (r.active && !r.sessions[r.active]) r.active = null;
     if (r.front && !pidAlive(r.front.pid)) r.front = null;
     if (r.app && !pidAlive(r.app.pid)) r.app = null;
+    if (r.focus && !r.sessions[r.focus.session]) r.focus = null;
     return r;
 }
 
@@ -82,6 +87,18 @@ export function setActive(id) {
     return r.active;
 }
 
+// Explicit /vox from a session asks the open app window to switch to that chat.
+// A monotonically increasing seq lets the window act on it exactly once, so the
+// periodic poll never re-yanks a selection the user made by hand afterwards.
+export function requestFocus(id) {
+    const r = prune(load());
+    if (!r.sessions[id]) return r.active;
+    r.active = id;
+    r.focus = { session: id, seq: (r.focus?.seq || 0) + 1 };
+    save(r);
+    return r.active;
+}
+
 export function setFront(pid) {
     const r = prune(load());
     r.front = { pid };
@@ -107,6 +124,7 @@ export function list() {
     save(r);
     return {
         active: r.active,
+        focus: r.focus,
         sessions: Object.entries(r.sessions).map(([id, session]) => ({
             id,
             name: session.name,

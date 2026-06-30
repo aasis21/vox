@@ -482,6 +482,7 @@ export function renderHtml(instanceId) {
   }
   function caption(html) { el.cap.innerHTML = html || ""; }
 
+  var lastFocusSeq = 0;
   function refreshSessions() {
     return fetch("/sessions").then(function (resp) {
       if (!resp.ok) throw new Error("sessions " + resp.status);
@@ -490,6 +491,7 @@ export function renderHtml(instanceId) {
       var active = data && data.active;
       var sessions = data && data.sessions || [];
       var current = el.sessSel.value;
+      var focus = data && data.focus;
       el.sessSel.innerHTML = "";
       if (!sessions.length) {
         var empty = document.createElement("option");
@@ -511,10 +513,22 @@ export function renderHtml(instanceId) {
         el.sessSel.appendChild(opt);
         if (sessions[i].active) active = sid;
       }
-      // Per-panel target: keep THIS panel's own selection; only fall back to the
-      // registry's active session (or first) when nothing is chosen yet. This stops
-      // the periodic refresh from yanking one panel to whatever another panel picked.
-      el.sessSel.value = current || active || sessions[0].id;
+      // A fresh /vox from a session bumps a focus seq asking this window to jump to
+      // that chat. Honor it exactly once; otherwise keep this window's own selection
+      // so the periodic poll never yanks a choice the user made by hand.
+      var pendingFocus = (focus && focus.seq && focus.seq !== lastFocusSeq) ? focus : null;
+      if (pendingFocus) lastFocusSeq = focus.seq;
+      var hasFocusTarget = pendingFocus && pendingFocus.session &&
+        sessions.some(function (s) { return s.id === pendingFocus.session; });
+      el.sessSel.value = hasFocusTarget ? pendingFocus.session : (current || active || sessions[0].id);
+
+      if (hasFocusTarget && pendingFocus.session !== current) {
+        var ft = el.sessSel.options[el.sessSel.selectedIndex];
+        var flabel = (ft && (ft.dataset.title || ft.textContent)) || pendingFocus.session;
+        bargeCancel(); goReady();
+        connectListen(); loadHistory(pendingFocus.session);
+        if (current) toast("Switched to " + flabel);
+      }
     }).catch(function () {});
   }
 
@@ -799,7 +813,7 @@ export function renderHtml(instanceId) {
       var ct = resp.headers.get("content-type") || "";
       if (!resp.ok || ct.indexOf("text/event-stream") < 0) {
         var data = await resp.json().catch(function () { return null; });
-        full = (data && (data.reply || data.error)) || "I couldn't reach the agent just now.";
+        full = (data && (data.reply || data.error)) || "I didn't get a reply that time \u2014 give it another try.";
         caption("<span>" + escapeHtml(full) + "</span>"); setState("speaking"); enqueueSpeak(full);
       } else {
         var reader = resp.body.getReader(), dec = new TextDecoder(), sseBuf = "";
@@ -828,7 +842,7 @@ export function renderHtml(instanceId) {
       await waitForSpeech();
     } catch (e) {
       if (!(e && e.name === "AbortError")) {
-        var m = "I couldn't reach the agent just now.";
+        var m = "I can't reach this chat right now \u2014 it may have ended. Try starting Vox again.";
         caption("<span>" + escapeHtml(m) + "</span>"); setState("speaking"); enqueueSpeak(m);
         await waitForSpeech();
       }

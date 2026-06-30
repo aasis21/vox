@@ -80,7 +80,7 @@ export function createVoice(session) {
             internal = null;
         },
         activate() {
-            return registry.setActive(id);
+            return registry.requestFocus(id);
         },
         who() {
             return registry.list();
