@@ -107,8 +107,9 @@ main { position: relative; z-index: 1; }
 .hero-proof { font-family: var(--mono); font-size: 12.5px; color: var(--fg-faint); margin: 0 0 40px; animation: fade-up 1s ease-out .54s both; }
 .hero-proof a { color: var(--accent); text-decoration: none; } .hero-proof a:hover { text-decoration: underline; }
 
-/* install block (hero) */
-.hero-install { max-width: 720px; margin: 0 auto; text-align: left; background: var(--code-bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; animation: fade-up 1s ease-out .6s both; }
+/* install block (hero) — panel bg is always dark (--code-bg, identical in both themes),
+   so pin its text palette to the dark scheme; otherwise light mode paints near-black text on it. */
+.hero-install { --fg: #e8eef4; --fg-dim: #9aa6b4; --accent: #5ce6a3; max-width: 720px; margin: 0 auto; text-align: left; background: var(--code-bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; animation: fade-up 1s ease-out .6s both; }
 .hero-install-head { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.015); }
 .hero-install-head .label { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); }
 .install-tabs { display: inline-flex; gap: 4px; margin-left: auto; }
