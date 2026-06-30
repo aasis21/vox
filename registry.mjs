@@ -48,11 +48,20 @@ export function prune(r) {
     return r;
 }
 
-export function register(id, { name, internalPort, pid }, makeActive = false) {
+export function register(id, { name, summary, internalPort, pid }, makeActive = false) {
     const r = prune(load());
-    r.sessions[id] = { name, internalPort, pid, ts: Date.now() };
+    const prev = r.sessions[id] || {};
+    r.sessions[id] = { name, summary: summary ?? prev.summary, internalPort, pid, ts: Date.now() };
     if (makeActive || !r.active) r.active = id;
     save(r);
+}
+
+export function setSummary(id, summary) {
+    const r = prune(load());
+    if (r.sessions[id] && summary && r.sessions[id].summary !== summary) {
+        r.sessions[id].summary = summary;
+        save(r);
+    }
 }
 
 export function unregister(id) {
@@ -85,6 +94,7 @@ export function list() {
         sessions: Object.entries(r.sessions).map(([id, session]) => ({
             id,
             name: session.name,
+            summary: session.summary,
             active: id === r.active,
         })),
     };

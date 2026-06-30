@@ -94,7 +94,7 @@ export function renderHtml(instanceId) {
   #sessSel:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent); }
   #sessSel option { background: #12141c; color: var(--ink); }
   .ghost {
-    -webkit-appearance: none; cursor: pointer; color: var(--ink);
+    -webkit-appearance: none; cursor: pointer; color: var(--ink); position: relative;
     width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 16px;
     background: var(--panel); border: 1px solid var(--stroke); backdrop-filter: blur(14px);
     transition: transform .12s ease, background .2s ease, border-color .2s ease;
@@ -102,6 +102,18 @@ export function renderHtml(instanceId) {
   .ghost:hover { background: rgba(40,46,60,.7); border-color: var(--stroke-strong); transform: translateY(-1px); }
   .ghost:active { transform: scale(.95); }
   .ghost.off { opacity: .45; }
+  /* hover tooltips: explain what each top-bar control does (slight delay so a
+     sweep across the bar doesn't flash every label) */
+  .ghost[data-tip]::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 9px); right: 0;
+    padding: 6px 9px; border-radius: 9px; white-space: nowrap;
+    font: 500 11px/1.2 var(--sans); letter-spacing: .2px; color: var(--ink);
+    background: rgba(16,18,26,.97); border: 1px solid var(--stroke-strong);
+    box-shadow: 0 10px 28px -10px rgba(0,0,0,.65);
+    opacity: 0; transform: translateY(-4px); pointer-events: none; z-index: 6;
+    transition: opacity .14s ease, transform .14s ease;
+  }
+  .ghost[data-tip]:hover::after { opacity: 1; transform: translateY(0); transition-delay: .35s; }
   /* send-now button: only while actively capturing your speech */
   #send { display: none; color: #fff; border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 28%, transparent); }
   body[data-state="listening"] #send { display: grid; }
@@ -338,7 +350,6 @@ export function renderHtml(instanceId) {
 
     <div id="topbar">
       <div class="bar-left">
-        <button id="end" class="ghost" title="End session">&#x2715;</button>
         <span class="wordmark">
           <svg class="logo" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
             <defs><linearGradient id="voxlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a8b8db"/><stop offset="1" stop-color="#7f93c9"/></linearGradient></defs>
@@ -350,14 +361,15 @@ export function renderHtml(instanceId) {
           <b>vox</b>
         </span>
       </div>
-      <div id="sessionWrap"><select id="sessSel"><option value="">Loading…</option></select></div>
+      <div id="sessionWrap"><select id="sessSel" aria-label="Active chat session"><option value="">Loading…</option></select></div>
       <div class="bar-right">
         <span id="listenState"><span class="dot"></span><span id="listenLabel">Ready</span></span>
-        <button id="send" class="ghost" title="Send now">&#x27A4;</button>
-        <button id="stop" class="ghost" title="Stop">&#x23F9;</button>
-        <button id="trig" class="ghost" title="Start listening">&#x1F3A4;</button>
-        <button id="logBtn" class="ghost" title="Transcript">&#x1F4DC;</button>
-        <button id="spk" class="ghost" title="Mute voice">&#x1F50A;</button>
+        <button id="send" class="ghost" aria-label="Send now" data-tip="Send now · Space">&#x27A4;</button>
+        <button id="stop" class="ghost" aria-label="Stop" data-tip="Stop / cancel · Esc">&#x23F9;</button>
+        <button id="trig" class="ghost" aria-label="Start listening" data-tip="Start listening · Space">&#x1F3A4;</button>
+        <button id="logBtn" class="ghost" aria-label="Transcript" data-tip="Transcript log">&#x1F4DC;</button>
+        <button id="spk" class="ghost" aria-label="Mute voice" data-tip="Mute voice">&#x1F50A;</button>
+        <button id="end" class="ghost" aria-label="End session" data-tip="End session">&#x2715;</button>
       </div>
     </div>
 
@@ -470,10 +482,13 @@ export function renderHtml(instanceId) {
       for (var i = 0; i < sessions.length; i++) {
         var opt = document.createElement("option");
         var sid = sessions[i].id || "";
-        var nm = sessions[i].name;
+        var nm = sessions[i].name || "";
+        var summary = sessions[i].summary || "";
         var shortId = sid.length > 8 ? sid.slice(0, 8) : sid;
+        var titleText = summary || nm || sid;
         opt.value = sid;
-        opt.textContent = (sessions[i].active ? "● " : "") + (nm ? nm + " — " + shortId : sid);
+        opt.textContent = (sessions[i].active ? "● " : "") + titleText + (shortId ? " — " + shortId : "");
+        opt.title = (nm ? nm : "") + (summary ? " · " + summary : "") + (sid ? " · " + sid : "");
         el.sessSel.appendChild(opt);
         if (sessions[i].active) active = sid;
       }
@@ -961,6 +976,8 @@ export function renderHtml(instanceId) {
   el.spk.addEventListener("click", function () {
     speakMuted = !speakMuted; el.spk.classList.toggle("off", speakMuted);
     el.spk.innerHTML = speakMuted ? "&#x1F507;" : "&#x1F50A;";
+    el.spk.setAttribute("data-tip", speakMuted ? "Unmute voice" : "Mute voice");
+    el.spk.setAttribute("aria-label", speakMuted ? "Unmute voice" : "Mute voice");
     if (speakMuted && window.speechSynthesis) window.speechSynthesis.cancel();
   });
 
