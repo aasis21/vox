@@ -482,12 +482,21 @@ export function renderHtml(instanceId) {
   }
   function caption(html) { el.cap.innerHTML = html || ""; }
 
-  var lastFocusSeq = 0;
+  var lastFocusToken = 0;
+  var loadedVer = null;
   function refreshSessions() {
     return fetch("/sessions").then(function (resp) {
       if (!resp.ok) throw new Error("sessions " + resp.status);
       return resp.json();
     }).then(function (data) {
+      // Self-refresh after a redeploy: the front stamps each /sessions reply with the
+      // boot id of the process serving it. The first value we see is "our" version;
+      // if it ever changes, the extension was reloaded, so reload to get fresh JS.
+      var ver = data && data.ver;
+      if (ver) {
+        if (loadedVer === null) loadedVer = ver;
+        else if (ver !== loadedVer) { location.reload(); return; }
+      }
       var active = data && data.active;
       var sessions = data && data.sessions || [];
       var current = el.sessSel.value;
@@ -513,21 +522,25 @@ export function renderHtml(instanceId) {
         el.sessSel.appendChild(opt);
         if (sessions[i].active) active = sid;
       }
-      // A fresh /vox from a session bumps a focus seq asking this window to jump to
-      // that chat. Honor it exactly once; otherwise keep this window's own selection
-      // so the periodic poll never yanks a choice the user made by hand.
-      var pendingFocus = (focus && focus.seq && focus.seq !== lastFocusSeq) ? focus : null;
-      if (pendingFocus) lastFocusSeq = focus.seq;
+      // A fresh /vox from a session carries a new focus token, asking this window to
+      // jump to that chat. Honor each token exactly once. A repeat /vox on the SAME
+      // session also brings a new token, so we re-sync (reconnect + reload) rather than
+      // ignore it. Manual dropdown picks never set a token, so they're left untouched.
+      var pendingFocus = (focus && focus.token && focus.token !== lastFocusToken) ? focus : null;
+      if (pendingFocus) lastFocusToken = focus.token;
       var hasFocusTarget = pendingFocus && pendingFocus.session &&
         sessions.some(function (s) { return s.id === pendingFocus.session; });
       el.sessSel.value = hasFocusTarget ? pendingFocus.session : (current || active || sessions[0].id);
 
-      if (hasFocusTarget && pendingFocus.session !== current) {
+      if (hasFocusTarget) {
         var ft = el.sessSel.options[el.sessSel.selectedIndex];
         var flabel = (ft && (ft.dataset.title || ft.textContent)) || pendingFocus.session;
+        // Clean handoff for any state: bargeCancel cuts off an in-flight reply
+        // (thinking) or live speech (speaking) and stops any capture (listening);
+        // goReady settles the orb; then we wire the mic + transcript to the new chat.
         bargeCancel(); goReady();
         connectListen(); loadHistory(pendingFocus.session);
-        if (current) toast("Switched to " + flabel);
+        if (current) toast((pendingFocus.session === current ? "Reconnected to " : "Switched to ") + flabel);
       }
     }).catch(function () {});
   }
@@ -1052,7 +1065,7 @@ export function renderHtml(instanceId) {
     refreshSessions().then(function () {
       if ((el.sessSel.value || "") !== lastListenSession) connectListen();
     });
-  }, 5000);
+  }, 3000);
   el.spk.addEventListener("click", function () {
     speakMuted = !speakMuted; el.spk.classList.toggle("off", speakMuted);
     el.spk.innerHTML = speakMuted ? "&#x1F507;" : "&#x1F50A;";

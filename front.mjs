@@ -4,6 +4,11 @@ import { listen, readBody } from "./http-util.mjs";
 import * as registry from "./registry.mjs";
 import { readHistory } from "./store.mjs";
 
+// Changes every time the front (re)starts — i.e. every redeploy/reload. The window
+// records the first value it sees and reloads itself when it changes, so an open app
+// window always ends up running the freshly served JS instead of stale code.
+const BOOT = Date.now();
+
 function sendJson(res, status, obj) {
     res.writeHead(status, { "Content-Type": "application/json" });
     res.end(JSON.stringify(obj));
@@ -78,7 +83,7 @@ export async function ensureFront({ selfId, selfInternalPort, servePage, localTu
             }
 
             if (req.method === "GET" && url.pathname === "/sessions") {
-                sendJson(res, 200, registry.list());
+                sendJson(res, 200, { ...registry.list(), ver: BOOT });
                 return;
             }
 

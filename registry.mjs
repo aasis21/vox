@@ -13,8 +13,8 @@ function normalize(r) {
         front: r.front && Number.isInteger(r.front.pid) ? { pid: r.front.pid } : null,
         app: r.app && Number.isInteger(r.app.pid) ? { pid: r.app.pid } : null,
         focus:
-            r.focus && typeof r.focus.session === "string" && Number.isInteger(r.focus.seq)
-                ? { session: r.focus.session, seq: r.focus.seq }
+            r.focus && typeof r.focus.session === "string" && Number.isInteger(r.focus.token)
+                ? { session: r.focus.session, token: r.focus.token }
                 : null,
         sessions: r.sessions && typeof r.sessions === "object" ? r.sessions : {},
     };
@@ -88,13 +88,15 @@ export function setActive(id) {
 }
 
 // Explicit /vox from a session asks the open app window to switch to that chat.
-// A monotonically increasing seq lets the window act on it exactly once, so the
-// periodic poll never re-yanks a selection the user made by hand afterwards.
+// The token is a fresh timestamp on every call (it never resets to a low value),
+// so the window acts on it exactly once even if an earlier focus was pruned, and a
+// repeat /vox on the same session still re-syncs. Manual dropdown picks don't touch
+// focus, so a hand-made choice is never yanked away by the periodic poll.
 export function requestFocus(id) {
     const r = prune(load());
     if (!r.sessions[id]) return r.active;
     r.active = id;
-    r.focus = { session: id, seq: (r.focus?.seq || 0) + 1 };
+    r.focus = { session: id, token: Date.now() };
     save(r);
     return r.active;
 }
